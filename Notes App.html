@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เว็บบันทึกสิ่งที่จะทำ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            margin: 20px; 
+            padding: 0;
+        }
+        h1 {
+            color: #333; 
+            font-size: 24px;
+        }
+        input, textarea {
+            width: 100%; 
+            max-width: 500px; 
+            padding: 10px; 
+            margin: 10px 0; 
+            font-size: 16px;
+            box-sizing: border-box; /* Ensures padding is included in width */
+        }
+        button {
+            padding: 10px; 
+            font-size: 16px; 
+            cursor: pointer;
+            width: 100%; 
+            max-width: 200px;
+        }
+        ul {
+            list-style-type: none; 
+            padding: 0; 
+            max-width: 500px; 
+            margin: 0 auto; /* Center align */
+        }
+        li {
+            margin: 10px 0; 
+            background: #f4f4f4; 
+            padding: 10px; 
+            border-radius: 5px; 
+            position: relative; 
+            font-size: 16px;
+        }
+        .delete {
+            color: red; 
+            cursor: pointer; 
+            position: absolute; 
+            right: 10px; 
+            top: 10px; 
+            font-size: 14px;
+        }
+        .due-date {
+            font-size: 0.9em; 
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<h1>เว็บบันทึกสิ่งที่จะทำ</h1>
+<textarea id="taskInput" placeholder="เขียนสิ่งที่จะทำที่นี่..."></textarea>
+<input type="date" id="dueDateInput" />
+<button id="addTaskButton">เพิ่มสิ่งที่จะทำ</button>
+
+<h2>รายการสิ่งที่จะทำ</h2>
+<ul id="taskList"></ul>
+
+<script>
+    const addTaskButton = document.getElementById('addTaskButton');
+    const taskInput = document.getElementById('taskInput');
+    const dueDateInput = document.getElementById('dueDateInput');
+    const taskList = document.getElementById('taskList');
+
+    // Load tasks from local storage
+    document.addEventListener('DOMContentLoaded', loadTasks);
+
+    addTaskButton.addEventListener('click', () => {
+        const taskText = taskInput.value.trim();
+        const dueDate = dueDateInput.value;
+
+        if (taskText === '' || dueDate === '') {
+            alert('กรุณากรอกทั้งสิ่งที่จะทำและวันสิ้นสุด');
+            return;
+        }
+
+        addTaskToList(taskText, dueDate);
+        taskInput.value = ''; // Clear input
+        dueDateInput.value = ''; // Clear date input
+        saveTasks();
+    });
+
+    function addTaskToList(taskText, dueDate) {
+        const li = document.createElement('li');
+        li.textContent = taskText;
+
+        const timestamp = document.createElement('div');
+        timestamp.classList.add('due-date');
+        timestamp.textContent = `วันสิ้นสุด: ${dueDate}`;
+        li.appendChild(timestamp);
+
+        const deleteButton = document.createElement('span');
+        deleteButton.textContent = 'ลบ';
+        deleteButton.classList.add('delete');
+        deleteButton.onclick = () => {
+            taskList.removeChild(li);
+            saveTasks(); // Save after deletion
+        };
+
+        li.appendChild(deleteButton);
+        taskList.appendChild(li);
+        sortTasks();
+    }
+
+    function loadTasks() {
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        tasks.forEach(task => {
+            addTaskToList(task.text, task.dueDate);
+        });
+    }
+
+    function saveTasks() {
+        const tasks = [];
+        const listItems = taskList.querySelectorAll('li');
+        listItems.forEach(item => {
+            const text = item.firstChild.textContent;
+            const dueDate = item.querySelector('.due-date').textContent.replace('วันสิ้นสุด: ', '');
+            tasks.push({ text, dueDate });
+        });
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function sortTasks() {
+        const items = Array.from(taskList.children);
+        items.sort((a, b) => {
+            const aDate = new Date(a.querySelector('.due-date').textContent.replace('วันสิ้นสุด: ', ''));
+            const bDate = new Date(b.querySelector('.due-date').textContent.replace('วันสิ้นสุด: ', ''));
+            return aDate - bDate; // Sort in ascending order
+        });
+        items.forEach(item => taskList.appendChild(item)); // Re-append items to reflect the new order
+    }
+</script>
+
+</body>
+</html>
